@@ -1,0 +1,10 @@
+{
+  "extends": "airbnb",
+  "rules": {
+    "no-unused-expressions": 0,
+    "import/no-unresolved": 0
+  },
+  "globals": {
+    "PIXI": true
+  }
+}
