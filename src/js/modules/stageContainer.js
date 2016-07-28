@@ -79,7 +79,7 @@ class StageContainer {
   }
 
   addNewParticles() {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < Math.max(10, this.removedParticles.length); i++) {
       let colorStep;
       if (i < this.removedParticles.length) {
         colorStep = this.removedParticles[i].colorStep;
