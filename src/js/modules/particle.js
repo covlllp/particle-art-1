@@ -29,7 +29,7 @@ class Particle {
   }
 
   get shouldBeDrawn() {
-    return this.isInWindow && this.circle.alpha > 0.1 && this.circle.width > 5;
+    return this.isInWindow && this.circle.alpha > constants.ALPHA_MIN;
   }
 
   get isInWindow() {

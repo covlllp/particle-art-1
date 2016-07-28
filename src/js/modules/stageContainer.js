@@ -14,7 +14,7 @@ class StageContainer {
   }
 
   get newColorStep() {
-    return this.currentColorStep + 1;
+    return (this.currentColorStep + 2) % constants.COLOR_STEPS;
   }
 
   addToStage(particle) {
@@ -57,7 +57,7 @@ class StageContainer {
     if (!this.currentColorParticles.length) {
       this.currentColorParticles = this.newColorParticles;
       this.newColorParticles = [];
-      this.currentColorStep++ % constants.COLOR_STEPS;
+      this.currentColorStep = this.newColorStep;
     }
 
     if (!this.newColorParticles.length) {
@@ -79,7 +79,7 @@ class StageContainer {
   }
 
   addNewParticles() {
-    for (let i = 0; i < Math.max(10, this.removedParticles.length); i++) {
+    for (let i = 0; i < Math.max(5, this.removedParticles.length); i++) {
       let colorStep;
       if (i < this.removedParticles.length) {
         colorStep = this.removedParticles[i].colorStep;
