@@ -7,7 +7,7 @@ import { rainbow } from 'js/utils/colorUtils';
 const texture = PIXI.Texture.fromImage('src/assets/circle.png');
 
 class Particle {
-  constructor(startPoint, angle, size, colorStep, speed) {
+  constructor(startPoint, angle, size, colorStep, speed, startingAlpha) {
     this.position = startPoint;
     this.angle = angle;
     this.speed = speed;
@@ -17,6 +17,7 @@ class Particle {
     const circle = new PIXI.Sprite(texture);
     circle.width = circle.height = size;
     circle.blendMode = PIXI.BLEND_MODES.ADD;
+    circle.alpha = startingAlpha;
     circle.anchor = {
       x: 0.5,
       y: 0.5,
@@ -46,6 +47,7 @@ class Particle {
   }
 
   updateColorStep(colorStep) {
+    this.circle.alpha = 1;
     this.colorStep = colorStep;
     this.updateColor();
   }
@@ -82,7 +84,8 @@ class Particle {
       randomAngle,
       randomDiameter,
       colorStep,
-      Math.random() * constants.SPEED_MAX
+      Math.random() * constants.SPEED_MAX,
+      constants.ALPHA_START
     );
   }
 }
