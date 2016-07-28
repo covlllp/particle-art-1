@@ -1,19 +1,20 @@
 import Point from 'js/modules/point';
 
-import { getNewPosition } from 'js/utils/mathUtils';
-import { getRandomColor } from 'js/utils/colorUtils';
+import constants from 'js/constants';
+import { getNewPosition, getDistance } from 'js/utils/mathUtils';
+import { rainbow } from 'js/utils/colorUtils';
+
+const texture = PIXI.Texture.fromImage('src/assets/circle.png');
 
 class Particle {
-  constructor(startPoint, angle, size, color, speed, decay) {
+  constructor(startPoint, angle, size, colorStep, speed) {
     this.position = startPoint;
     this.angle = angle;
     this.speed = speed;
-    this.decay = decay;
+    this.colorStep = colorStep;
 
-    const texture = PIXI.Texture.fromImage('src/assets/circle.png');
     const circle = new PIXI.Sprite(texture);
     circle.width = circle.height = size;
-    circle.tint = color;
     circle.blendMode = PIXI.BLEND_MODES.ADD;
     circle.anchor = {
       x: 0.5,
@@ -22,6 +23,7 @@ class Particle {
     this.circle = circle;
 
     this.locateCircle();
+    this.updateColor();
   }
 
   get shouldBeDrawn() {
@@ -38,6 +40,20 @@ class Particle {
     );
   }
 
+  updateColor() {
+    this.circle.tint = rainbow(this.colorStep);
+  }
+
+  updateColorStep(colorStep) {
+    this.colorStep = colorStep;
+    this.updateColor();
+  }
+
+  isOverlapping(particle) {
+    const distance = getDistance(this.position, particle.position);
+    return distance < constants.CIRCLE_DIAMETER;
+  }
+
   locateCircle() {
     this.circle.position.x = this.position.x;
     this.circle.position.y = this.position.y;
@@ -48,29 +64,23 @@ class Particle {
   }
 
   tick() {
-    console.log('next frame');
-    this.percentage += this.speed;
-    this.circle.alpha *= this.decay;
-    this.speed *= this.decay;
-    this.circle.scale.x *= this.decay;
-    this.circle.scale.y *= this.decay;
+    this.circle.alpha -= constants.ALPHA_DECAY;
     this.updatePosition();
     this.locateCircle();
   }
 
-  static generateRandomParticle() {
+  static generateRandomParticle(colorStep) {
     const randomPoint = new Point(
       Math.random() * window.innerWidth,
       Math.random() * window.innerHeight
     );
     const randomAngle = Math.random() * 360;
     return new Particle(
-      new Point(400, 400),
+      randomPoint,
       randomAngle,
-      40,
-      getRandomColor(),
-      80,
-      0.7
+      constants.CIRCLE_DIAMETER,
+      colorStep,
+      Math.random() * constants.SPEED_MAX
     );
   }
 }

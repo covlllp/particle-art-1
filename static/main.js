@@ -91,6 +91,10 @@
 
 	var _particle2 = _interopRequireDefault(_particle);
 
+	var _constants = __webpack_require__(8);
+
+	var _constants2 = _interopRequireDefault(_constants);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -102,6 +106,10 @@
 	    this.stage = new PIXI.Container();
 	    this.renderer = renderer;
 	    this.elements = [];
+	    this.currentColorStep = 0;
+
+	    this.currentColorElements = [];
+	    this.newColorElements = [];
 	  }
 
 	  _createClass(StageContainer, [{
@@ -120,29 +128,88 @@
 	      if (!particle.shouldBeDrawn) return;
 	      this.addToStage(particle.circle);
 	      this.elements.push(particle);
+
+	      if (particle.colorStep === this.currentColorStep) {
+	        this.currentColorElements.push(particle);
+	      } else {
+	        this.newColorElements.push(particle);
+	      }
+	    }
+	  }, {
+	    key: 'removeParticle',
+	    value: function removeParticle(particle) {
+	      this.removeFromStage(particle.circle);
+	    }
+	  }, {
+	    key: 'rebuildColorElements',
+	    value: function rebuildColorElements() {
+	      var _this = this;
+
+	      var _loop = function _loop(i) {
+	        var newColorParticle = _this.newColorElements[i];
+	        _this.currentColorElements = _this.currentColorElements.filter(function (currentColorParticle) {
+	          if (newColorParticle.isOverlapping(currentColorParticle)) {
+	            currentColorParticle.updateColorStep(_this.newColorStep);
+	            _this.newColorElements.push(currentColorParticle);
+	            return false;
+	          }
+	          return true;
+	        });
+	      };
+
+	      for (var i = 0; i < this.newColorElements.length; i++) {
+	        _loop(i);
+	      }
+
+	      if (!this.currentColorElements.length) {
+	        this.currentColorElements = this.newColorElements;
+	        this.newColorElements = [];
+	        this.currentColorStep++;
+	      }
+
+	      if (!this.newColorElements.length) {
+	        this.addParticle(_particle2.default.generateRandomParticle(this.newColorStep));
+	      }
 	    }
 	  }, {
 	    key: 'tick',
 	    value: function tick() {
-	      var _this = this;
+	      var _this2 = this;
 
-	      this.elements.filter(function (element) {
+	      this.elements = this.elements.filter(function (element) {
 	        element.tick();
 	        if (!element.shouldBeDrawn) {
-	          _this.removeFromStage(element.circle);
+	          _this2.removeParticle(element);
 	          return false;
 	        }
 	        return true;
 	      });
 
-	      this.addParticle(_particle2.default.generateRandomParticle());
+	      var filterRemovedParticles = function filterRemovedParticles(particle) {
+	        return particle.shouldBeDrawn;
+	      };
+	      this.currentColorElements = this.currentColorElements.filter(filterRemovedParticles);
+	      this.newColorElements = this.newColorElements.filter(filterRemovedParticles);
+	      this.rebuildColorElements();
+
+	      for (var i = 0; i < 5; i++) {
+	        if (this.elements.length < _constants2.default.PARTICLE_MAX) {
+	          this.addParticle(_particle2.default.generateRandomParticle(this.currentColorStep));
+	        }
+	      }
 
 	      this.renderStage();
+	      console.log('color step: ', this.currentColorStep);
 	    }
 	  }, {
 	    key: 'renderStage',
 	    value: function renderStage() {
 	      this.renderer.render(this.stage);
+	    }
+	  }, {
+	    key: 'newColorStep',
+	    get: function get() {
+	      return this.currentColorStep + 1;
 	    }
 	  }]);
 
@@ -167,6 +234,10 @@
 
 	var _point2 = _interopRequireDefault(_point);
 
+	var _constants = __webpack_require__(8);
+
+	var _constants2 = _interopRequireDefault(_constants);
+
 	var _mathUtils = __webpack_require__(4);
 
 	var _colorUtils = __webpack_require__(6);
@@ -175,19 +246,19 @@
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+	var texture = PIXI.Texture.fromImage('src/assets/circle.png');
+
 	var Particle = function () {
-	  function Particle(startPoint, angle, size, color, speed, decay) {
+	  function Particle(startPoint, angle, size, colorStep, speed) {
 	    _classCallCheck(this, Particle);
 
 	    this.position = startPoint;
 	    this.angle = angle;
 	    this.speed = speed;
-	    this.decay = decay;
+	    this.colorStep = colorStep;
 
-	    var texture = PIXI.Texture.fromImage('src/assets/circle.png');
 	    var circle = new PIXI.Sprite(texture);
 	    circle.width = circle.height = size;
-	    circle.tint = color;
 	    circle.blendMode = PIXI.BLEND_MODES.ADD;
 	    circle.anchor = {
 	      x: 0.5,
@@ -196,9 +267,27 @@
 	    this.circle = circle;
 
 	    this.locateCircle();
+	    this.updateColor();
 	  }
 
 	  _createClass(Particle, [{
+	    key: 'updateColor',
+	    value: function updateColor() {
+	      this.circle.tint = (0, _colorUtils.rainbow)(this.colorStep);
+	    }
+	  }, {
+	    key: 'updateColorStep',
+	    value: function updateColorStep(colorStep) {
+	      this.colorStep = colorStep;
+	      this.updateColor();
+	    }
+	  }, {
+	    key: 'isOverlapping',
+	    value: function isOverlapping(particle) {
+	      var distance = (0, _mathUtils.getDistance)(this.position, particle.position);
+	      return distance < _constants2.default.CIRCLE_DIAMETER;
+	    }
+	  }, {
 	    key: 'locateCircle',
 	    value: function locateCircle() {
 	      this.circle.position.x = this.position.x;
@@ -212,12 +301,7 @@
 	  }, {
 	    key: 'tick',
 	    value: function tick() {
-	      console.log('next frame');
-	      this.percentage += this.speed;
-	      this.circle.alpha *= this.decay;
-	      this.speed *= this.decay;
-	      this.circle.scale.x *= this.decay;
-	      this.circle.scale.y *= this.decay;
+	      this.circle.alpha -= _constants2.default.ALPHA_DECAY;
 	      this.updatePosition();
 	      this.locateCircle();
 	    }
@@ -235,10 +319,10 @@
 	    }
 	  }], [{
 	    key: 'generateRandomParticle',
-	    value: function generateRandomParticle() {
+	    value: function generateRandomParticle(colorStep) {
 	      var randomPoint = new _point2.default(Math.random() * window.innerWidth, Math.random() * window.innerHeight);
 	      var randomAngle = Math.random() * 360;
-	      return new Particle(new _point2.default(400, 400), randomAngle, 40, (0, _colorUtils.getRandomColor)(), 80, 0.7);
+	      return new Particle(randomPoint, randomAngle, _constants2.default.CIRCLE_DIAMETER, colorStep, Math.random() * _constants2.default.SPEED_MAX);
 	    }
 	  }]);
 
@@ -279,6 +363,7 @@
 	});
 	exports.degToRad = undefined;
 	exports.getNewPosition = getNewPosition;
+	exports.getDistance = getDistance;
 
 	var _point = __webpack_require__(3);
 
@@ -295,6 +380,10 @@
 	  var y = startPoint.y - Math.sin(rads) * distance;
 	  var x = Math.cos(rads) * distance + startPoint.x;
 	  return new _point2.default(x, y);
+	}
+
+	function getDistance(pointA, pointB) {
+	  return Math.sqrt(Math.pow(pointA.x - pointB.x, 2) + Math.pow(pointA.y - pointB.y, 2));
 	}
 
 /***/ },
@@ -10379,14 +10468,23 @@
 
 /***/ },
 /* 6 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	"use strict";
+	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
+	exports.rgb2Color = undefined;
 	exports.getRandomColor = getRandomColor;
+	exports.rainbow = rainbow;
+
+	var _constants = __webpack_require__(8);
+
+	var _constants2 = _interopRequireDefault(_constants);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 	var rgb2Color = exports.rgb2Color = function rgb2Color(red, green, blue) {
 	  return red * Math.pow(16, 4) + green * Math.pow(16, 2) + blue;
 	};
@@ -10446,6 +10544,36 @@
 
 	  return rgb2Color(red, green, blue);
 	}
+
+	function rainbow(n) {
+	  var hue = n % _constants2.default.COLOR_STEPS / _constants2.default.COLOR_STEPS;
+
+	  var _hslToRgb2 = hslToRgb(hue, 1, 0.7);
+
+	  var red = _hslToRgb2.red;
+	  var green = _hslToRgb2.green;
+	  var blue = _hslToRgb2.blue;
+
+	  return rgb2Color(red, green, blue);
+	}
+
+/***/ },
+/* 7 */,
+/* 8 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = {
+	  PARTICLE_MAX: 1000,
+	  SPEED_MAX: 5,
+	  ALPHA_DECAY: 0.005,
+	  CIRCLE_DIAMETER: 15,
+	  COLOR_STEPS: 5
+	};
 
 /***/ }
 /******/ ]);
