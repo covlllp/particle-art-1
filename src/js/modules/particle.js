@@ -1,7 +1,7 @@
 import Point from 'js/modules/point';
 
 import constants from 'js/constants';
-import { getNewPosition, getDistance } from 'js/utils/mathUtils';
+import { getNewPosition, getDistance, getNoisyAngle, getRandomSpeed } from 'js/utils/mathUtils';
 import { rainbow } from 'js/utils/colorUtils';
 
 const texture = PIXI.Texture.fromImage('src/assets/circle.png');
@@ -28,8 +28,8 @@ class Particle {
     this.updateColor();
   }
 
-  get shouldBeDrawn() {
-    return this.isInWindow && this.circle.alpha > constants.ALPHA_MIN;
+  get shouldBeRenewed() {
+    return this.isInWindow && this.circle.alpha < constants.ALPHA_MIN;
   }
 
   get isInWindow() {
@@ -40,6 +40,12 @@ class Particle {
       position.x < window.innerWidth &&
       position.y < window.innerHeight
     );
+  }
+
+  renew() {
+    this.speed = getRandomSpeed();
+    this.circle.alpha = constants.ALPHA_START;
+    this.angle = getNoisyAngle(this.angle);
   }
 
   updateColor() {
@@ -84,7 +90,7 @@ class Particle {
       randomAngle,
       randomDiameter,
       colorStep,
-      Math.random() * constants.SPEED_MAX,
+      getRandomSpeed(),
       constants.ALPHA_START
     );
   }

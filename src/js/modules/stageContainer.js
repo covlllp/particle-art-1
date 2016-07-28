@@ -26,7 +26,7 @@ class StageContainer {
   }
 
   addParticle(particle) {
-    if (!particle.shouldBeDrawn) return;
+    if (!particle.isInWindow) return;
     this.addToStage(particle.circle);
     this.particles.push(particle);
 
@@ -68,11 +68,16 @@ class StageContainer {
   updateParticleMovements() {
     this.removedParticles = [];
     this.particles = this.particles.filter((particle) => {
-      particle.tick();
-      if (!particle.shouldBeDrawn) {
+      if (!particle.isInWindow) {
         this.removeParticle(particle);
         this.removedParticles.push(particle);
         return false;
+      }
+
+      particle.tick();
+
+      if (particle.shouldBeRenewed) {
+        particle.renew();
       }
       return true;
     });
@@ -86,6 +91,7 @@ class StageContainer {
       } else {
         colorStep = this.currentColorStep;
       }
+
       if (this.particles.length < constants.PARTICLE_MAX) {
         this.addParticle(Particle.generateRandomParticle(colorStep));
       }
@@ -95,7 +101,7 @@ class StageContainer {
   tick() {
     this.updateParticleMovements();
 
-    const filterRemovedParticles = (particle) => particle.shouldBeDrawn;
+    const filterRemovedParticles = (particle) => particle.isInWindow;
     this.currentColorParticles = this.currentColorParticles.filter(filterRemovedParticles);
     this.newColorParticles = this.newColorParticles.filter(filterRemovedParticles);
     this.rebuildColorParticleGroups();
