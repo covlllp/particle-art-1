@@ -30,10 +30,10 @@ class StageContainer {
     this.addToStage(particle.circle);
     this.particles.push(particle);
 
-    if (particle.colorStep === this.currentColorStep) {
-      this.currentColorParticles.push(particle);
-    } else {
+    if (particle.colorStep === this.newColorStep) {
       this.newColorParticles.push(particle);
+    } else {
+      this.currentColorParticles.push(particle);
     }
   }
 
