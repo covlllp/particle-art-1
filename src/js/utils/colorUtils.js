@@ -56,6 +56,7 @@ export function getRandomColor() {
 
 export function rainbow(n) {
   const hue = n % constants.COLOR_STEPS / constants.COLOR_STEPS;
-  const { red, green, blue } = hslToRgb(hue, 1, 0.7);
+  const sat = Math.random() * 0.4 + 0.6;
+  const { red, green, blue } = hslToRgb(hue, sat, 0.7);
   return rgb2Color(red, green, blue);
 }

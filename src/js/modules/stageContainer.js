@@ -6,34 +6,34 @@ class StageContainer {
   constructor(renderer) {
     this.stage = new PIXI.Container();
     this.renderer = renderer;
-    this.elements = [];
+    this.particles = [];
     this.currentColorStep = 0;
 
-    this.currentColorElements = [];
-    this.newColorElements = [];
+    this.currentColorParticles = [];
+    this.newColorParticles = [];
   }
 
   get newColorStep() {
     return this.currentColorStep + 1;
   }
 
-  addToStage(element) {
-    this.stage.addChild(element);
+  addToStage(particle) {
+    this.stage.addChild(particle);
   }
 
-  removeFromStage(element) {
-    this.stage.removeChild(element);
+  removeFromStage(particle) {
+    this.stage.removeChild(particle);
   }
 
   addParticle(particle) {
     if (!particle.shouldBeDrawn) return;
     this.addToStage(particle.circle);
-    this.elements.push(particle);
+    this.particles.push(particle);
 
     if (particle.colorStep === this.currentColorStep) {
-      this.currentColorElements.push(particle);
+      this.currentColorParticles.push(particle);
     } else {
-      this.newColorElements.push(particle);
+      this.newColorParticles.push(particle);
     }
   }
 
@@ -41,53 +41,68 @@ class StageContainer {
     this.removeFromStage(particle.circle);
   }
 
-  rebuildColorElements() {
-    for (let i = 0; i < this.newColorElements.length; i++) {
-      const newColorParticle = this.newColorElements[i];
-      this.currentColorElements = this.currentColorElements.filter((currentColorParticle) => {
+  rebuildColorParticleGroups() {
+    for (let i = 0; i < this.newColorParticles.length; i++) {
+      const newColorParticle = this.newColorParticles[i];
+      this.currentColorParticles = this.currentColorParticles.filter((currentColorParticle) => {
         if (newColorParticle.isOverlapping(currentColorParticle)) {
           currentColorParticle.updateColorStep(this.newColorStep);
-          this.newColorElements.push(currentColorParticle);
+          this.newColorParticles.push(currentColorParticle);
           return false;
         }
         return true;
       });
     }
 
-    if (!this.currentColorElements.length) {
-      this.currentColorElements = this.newColorElements;
-      this.newColorElements = [];
-      this.currentColorStep++;
+    if (!this.currentColorParticles.length) {
+      this.currentColorParticles = this.newColorParticles;
+      this.newColorParticles = [];
+      this.currentColorStep++ % constants.COLOR_STEPS;
     }
 
-    if (!this.newColorElements.length) {
+    if (!this.newColorParticles.length) {
       this.addParticle(Particle.generateRandomParticle(this.newColorStep));
     }
   }
 
-  tick() {
-    this.elements = this.elements.filter((element) => {
-      element.tick();
-      if (!element.shouldBeDrawn) {
-        this.removeParticle(element);
+  updateParticleMovements() {
+    this.removedParticles = [];
+    this.particles = this.particles.filter((particle) => {
+      particle.tick();
+      if (!particle.shouldBeDrawn) {
+        this.removeParticle(particle);
+        this.removedParticles.push(particle);
         return false;
       }
       return true;
     });
+  }
 
-    const filterRemovedParticles = (particle) => particle.shouldBeDrawn;
-    this.currentColorElements = this.currentColorElements.filter(filterRemovedParticles);
-    this.newColorElements = this.newColorElements.filter(filterRemovedParticles);
-    this.rebuildColorElements();
-
-    for (let i = 0; i < 5; i++) {
-      if (this.elements.length < constants.PARTICLE_MAX) {
-        this.addParticle(Particle.generateRandomParticle(this.currentColorStep));
+  addNewParticles() {
+    for (let i = 0; i < 10; i++) {
+      let colorStep;
+      if (i < this.removedParticles.length) {
+        colorStep = this.removedParticles[i].colorStep;
+      } else {
+        colorStep = this.currentColorStep;
+      }
+      if (this.particles.length < constants.PARTICLE_MAX) {
+        this.addParticle(Particle.generateRandomParticle(colorStep));
       }
     }
+  }
+
+  tick() {
+    this.updateParticleMovements();
+
+    const filterRemovedParticles = (particle) => particle.shouldBeDrawn;
+    this.currentColorParticles = this.currentColorParticles.filter(filterRemovedParticles);
+    this.newColorParticles = this.newColorParticles.filter(filterRemovedParticles);
+    this.rebuildColorParticleGroups();
+
+    this.addNewParticles();
 
     this.renderStage();
-    console.log('color step: ', this.currentColorStep);
   }
 
   renderStage() {

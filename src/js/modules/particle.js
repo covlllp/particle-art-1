@@ -12,6 +12,7 @@ class Particle {
     this.angle = angle;
     this.speed = speed;
     this.colorStep = colorStep;
+    this.size = size;
 
     const circle = new PIXI.Sprite(texture);
     circle.width = circle.height = size;
@@ -51,7 +52,7 @@ class Particle {
 
   isOverlapping(particle) {
     const distance = getDistance(this.position, particle.position);
-    return distance < constants.CIRCLE_DIAMETER;
+    return distance < (this.size + particle.size) / 2;
   }
 
   locateCircle() {
@@ -75,10 +76,11 @@ class Particle {
       Math.random() * window.innerHeight
     );
     const randomAngle = Math.random() * 360;
+    const randomDiameter = constants.CIRCLE_DIAMETER + (Math.random() - 0.5) * constants.DIA_NOISE;
     return new Particle(
       randomPoint,
       randomAngle,
-      constants.CIRCLE_DIAMETER,
+      randomDiameter,
       colorStep,
       Math.random() * constants.SPEED_MAX
     );
